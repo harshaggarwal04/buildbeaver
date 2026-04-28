@@ -3,7 +3,7 @@ import Logout from '@/modules/auth/components/logout';
 import { requireAuth } from '@/modules/auth/utils/auth-utils'
 import React from 'react'
 
-const page = async() => {
+const page = async () => {
   await requireAuth();
   return (
     <div className='flex flex-col items-center justify-center h-screen'>
