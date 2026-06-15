@@ -14,6 +14,7 @@ import Logout from '@/modules/auth/components/logout'
 
 
 export const AppSidebar = () => {
+    
 
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
