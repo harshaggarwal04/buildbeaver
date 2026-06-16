@@ -7,12 +7,60 @@ import { headers } from "next/headers"
 import { Octokit } from "octokit"
 import prisma from "@/lib/db"
 
+export async function getContributionStats() {
+    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+
+        if (!session?.user) {
+            throw new Error("Unauthorized");
+        }
+
+        const token = await getGithubToken();
+
+        const octokit = new Octokit({ auth: token });
+
+        const { data: user } = await octokit.rest.users.getAuthenticated();
+        const username = user.login;
+
+        const calendar = await fetchUserContribution(token, username);
+
+        if (!calendar) {
+            return null;
+        }
+
+        const contributions = calendar.weeks.flatMap((week: any) =>
+            week.contributionDays.map((day: any) => ({
+                date: day.date,
+                count: day.contributionCount,
+                level: Math.min(4, Math.floor(day.contributionCount / 3))
+            })))
+
+            return(
+                {
+                    contributions,
+                    totalContributions: calendar.totalContributions
+
+                }
+            )
+
+    } catch (error) {
+        console.error("Contribution Stats Error:", error);
+
+    return {
+        contributions: []
+    };
+    }
+}
+
 
 export async function getDashboardStats() {
     try {
         const session = await auth.api.getSession({ headers: await headers(), });
 
         if (!session?.user) {
+
             throw new Error("Unauthorized");
         }
 
@@ -29,12 +77,14 @@ export async function getDashboardStats() {
 
 
         const calendar = await fetchUserContribution(token, user.login);
+
+
         const totalCommits = calendar?.totalContributions || 0;
 
         // count prs from database or github
 
         const { data: prs } = await octokit.rest.search.issuesAndPullRequests({
-            q: `author${user.login} type:pr`,
+            q: `author:${user.login} type:pr`,
             per_page: 1
         })
 
@@ -45,10 +95,10 @@ export async function getDashboardStats() {
         const totalReviews = 44;
 
         return {
-            totalCommits: 0,
-            totalPRs: 0,
-            totalReviews: 0,
-            totalRepos: 0
+            totalCommits,
+            totalPRs,
+            totalReviews,
+            totalRepos
         };
 
 
