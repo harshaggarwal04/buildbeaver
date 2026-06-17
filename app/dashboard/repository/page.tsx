@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { ExternalLink, Star, Search } from 'lucide-react'
 import { useRepositories } from '@/modules/repository/hooks/use-repositories'
 import { RepositoryListSkeleton } from '@/modules/repository/components/repository-skeleton'
+import { useConnectRepository } from '@/modules/repository/hooks/use-connect-repository'
 
 
 interface Repository {
@@ -26,6 +27,8 @@ interface Repository {
 const RepositoryPage = () => {
 
     const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useRepositories();
+
+    const {mutate: connectRepo} = useConnectRepository(); 
 
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -83,7 +86,17 @@ const RepositoryPage = () => {
 
 
     const handleConnect = (repo: any) =>{
-
+        setLocalConnectingId(repo.id)
+            connectRepo(
+                {
+                    owner: repo.full_name.split("/")[0],
+                    repo: repo.name,
+                    githubId: repo.id
+                },
+                {
+                    onSettled: ()=>setLocalConnectingId(null)
+                }
+            )
     }
 
 
