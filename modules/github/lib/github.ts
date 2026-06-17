@@ -26,6 +26,7 @@ export const getGithubToken = async () => {
     }
 
     return account.accessToken;
+    console.log("ACCOUNT:", account);
 }
 
 export async function fetchUserContribution(token: string, username: string) {
@@ -64,40 +65,40 @@ export async function fetchUserContribution(token: string, username: string) {
 
 }
 
-export  const getRepositories = async(page: number = 1 , perPage: number = 10) => {
-     const token = await getGithubToken();
-     const octokit = new Octokit({auth: token});
+export const getRepositories = async (page: number = 1, perPage: number = 10) => {
+    const token = await getGithubToken();
+    const octokit = new Octokit({ auth: token });
 
-     const {data} = await octokit.rest.repos.listForAuthenticatedUser({
+    const { data } = await octokit.rest.repos.listForAuthenticatedUser({
         sort: "updated",
         direction: "desc",
         visibility: "public",
-        per_page:perPage,
+        per_page: perPage,
         page: page
-     })
+    })
 
-     return data;
+    return data;
 }
 
 
-export const createWebhook = async(owner: string, repo: string)=>{
+export const createWebhook = async (owner: string, repo: string) => {
     const token = await getGithubToken();
-    const octokit = new Octokit({auth: token});
+    const octokit = new Octokit({ auth: token });
 
     const webhookUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/api/webhooks/github`;
 
-    const {data: hooks} = await octokit.rest.repos.listWebhooks({
+    const { data: hooks } = await octokit.rest.repos.listWebhooks({
         owner,
         repo
     })
 
     const existingHook = hooks.find(hook => hook.config.url === webhookUrl);
 
-    if(existingHook) return existingHook;
+    if (existingHook) return existingHook;
 
-    const {data} = await octokit.rest.repos.createWebhook({
+    const { data } = await octokit.rest.repos.createWebhook({
         owner, repo,
-        config:{
+        config: {
             url: webhookUrl,
             content_type: "json"
         },
@@ -109,21 +110,21 @@ export const createWebhook = async(owner: string, repo: string)=>{
 }
 
 
-export const deleteWebhook = async(owner: string, repo: string)=>{
+export const deleteWebhook = async (owner: string, repo: string) => {
     const token = await getGithubToken();
-    const octokit = new Octokit({auth: token});
+    const octokit = new Octokit({ auth: token });
 
     const webhookUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/api/webhooks/github`;
 
     try {
-        const {data: hooks} = await octokit.rest.repos.listWebhooks({
+        const { data: hooks } = await octokit.rest.repos.listWebhooks({
             owner,
             repo
         });
 
-        const hookToDelete = hooks.find(hook=>hook.config.url === webhookUrl);
+        const hookToDelete = hooks.find(hook => hook.config.url === webhookUrl);
 
-        if(hookToDelete){
+        if (hookToDelete) {
             await octokit.rest.repos.deleteWebhook({
                 owner,
                 repo,
@@ -143,4 +144,57 @@ export const deleteWebhook = async(owner: string, repo: string)=>{
         return false;
     }
 
+}
+
+
+export async function getRepoFileContents(
+    token: string,
+    owner: string,
+    repo: string
+): Promise<{ path: string; content: string }[]> {
+    const octokit = new Octokit({ auth: token });
+
+    const repoData = await octokit.rest.repos.get({ owner, repo });
+    const defaultBranch = repoData.data.default_branch;
+
+    const { data } = await octokit.rest.git.getTree({
+        owner,
+        repo,
+        tree_sha: defaultBranch,
+        recursive: "true",
+    });
+
+    const files = (data.tree as any[])
+        .filter(
+            (item) =>
+                item.type === "blob" &&
+                item.path &&
+                item.size && item.size < 200000 &&
+                !item.path.match(/\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|lock)$/i) &&
+                !item.path.match(/node_modules\//) // 👈 skip node_modules
+        )
+        .slice(0, 50);
+
+    const results: { path: string; content: string }[] = [];
+
+    for (const file of files) {
+        try {
+            const { data } = await octokit.rest.repos.getContent({
+                owner,
+                repo,
+                path: file.path!,
+            });
+
+            if ("content" in data && data.content) {
+                results.push({
+                    path: file.path!,
+                    content: Buffer.from(data.content, "base64").toString("utf-8"),
+                });
+            }
+        } catch (err) {
+            console.log("skip file:", file.path);
+        }
+    }
+
+    return results;
 }
