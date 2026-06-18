@@ -81,3 +81,18 @@ export async function indexCodebase(
 
     console.log("indexing complete");
 }
+
+
+
+export async function retrieveContext(query: string,  repoId: string, topK=5) {
+    const embedding = await generateEmbedding(query);
+
+    const results = await pineconeIndex.query({
+        vector: embedding,
+        filter: {repoId},
+        topK,
+        includeMetadata:true
+    })
+
+    return results.matches.map(match=>match.metadata?.content as string).filter(Boolean)
+}
