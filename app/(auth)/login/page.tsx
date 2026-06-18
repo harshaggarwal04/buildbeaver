@@ -1,13 +1,18 @@
 import LoginUI from '@/modules/auth/components/login-ui'
-import React from 'react'
-import { requireAuth, requireUnAuth } from '@/modules/auth/utils/auth-utils'
+import { requireUnAuth } from '@/modules/auth/utils/auth-utils'
+import { Suspense } from 'react'
 
-const LoginPage = async() => {
+async function AuthCheck() {
   await requireUnAuth()
+  return null
+}
+
+const LoginPage = () => {
   return (
-    <div>
-        <LoginUI />
-    </div>
+    <Suspense fallback={null}>
+      <AuthCheck />
+      <LoginUI />
+    </Suspense>
   )
 }
 
