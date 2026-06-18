@@ -32,7 +32,7 @@ export async function indexCodebase(
 ) {
     console.log("indexCodebase called with", files.length, "files");
 
-    const BATCH_EMBED = 5;
+    const BATCH_EMBED = 2;
     const vectors: PineconeRecord<RecordMetadata>[] = [];
 
     for (let i = 0; i < files.length; i += BATCH_EMBED) {
@@ -59,6 +59,8 @@ export async function indexCodebase(
         );
 
         vectors.push(...results.filter((r): r is PineconeRecord<RecordMetadata> => r !== null));
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 👈 add this
+
     }
 
     console.log(`Total vectors ready to upsert: ${vectors.length}`);

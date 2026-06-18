@@ -2,6 +2,7 @@ import { Octokit } from "octokit";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { headers } from "next/headers";
+import { isArray } from "util";
 
 // getting the github access token
 
@@ -170,10 +171,10 @@ export async function getRepoFileContents(
                 item.type === "blob" &&
                 item.path &&
                 item.size && item.size < 200000 &&
-                !item.path.match(/\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|lock)$/i) &&
-                !item.path.match(/node_modules\//) // 👈 skip node_modules
+                !item.path.match(/\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|lock|webp|woff|woff2|ttf|eot|mp4|mp3)$/i) &&
+                !item.path.match(/node_modules\//)
         )
-        .slice(0, 50);
+        .slice(0, 2000);
 
     const results: { path: string; content: string }[] = [];
 
@@ -198,3 +199,4 @@ export async function getRepoFileContents(
 
     return results;
 }
+
