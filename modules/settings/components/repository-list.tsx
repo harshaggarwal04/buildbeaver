@@ -80,9 +80,9 @@ export function RepositoryList() {
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Profile Setting</CardTitle>
+                    <CardTitle>Connected Repositories</CardTitle>
                     <CardDescription>
-                        Manage your account information
+                        Manage repositories connected to BuildBeavern
                     </CardDescription>
                 </CardHeader>
 
