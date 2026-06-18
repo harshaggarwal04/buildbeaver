@@ -3,6 +3,7 @@
 import { inngest } from "@/inngest/client";
 import prisma from "@/lib/db";
 import { getPullRequestDiff } from "@/modules/github/lib/github";
+import { canCreateReview, incrementReviewCount } from "@/modules/payment/lib/subscription";
 import { success } from "better-auth";
 
 export async function reviewPullRequest(
@@ -35,6 +36,11 @@ export async function reviewPullRequest(
             throw new Error(`Repositor ${owner}/${repo} not found in database. Please reconnect the repository`)
         }
 
+        const canReview = await canCreateReview(repository.user.id, repository.id);
+
+        if(!canCreateReview){
+            throw new Error("Review Limit Reached For this repository. Please upgrade to Pro for unlimited reviews")
+        }
 
         const githubAccount = repository.user.accounts[0];
 
@@ -57,25 +63,28 @@ export async function reviewPullRequest(
             }
         })
 
+
+        await incrementReviewCount(repository.user.id, repository.id);
+        
         return { success: true, message: "Review Queued" }
 
     } catch (error) {
         try {
             const repository = await prisma.repository.findFirst({
-                where:{
+                where: {
                     owner,
                     name: repo
                 }
             })
 
-            if(repository){
+            if (repository) {
                 await prisma.review.create({
-                    data:{
+                    data: {
                         repositoryId: repository.id,
                         prNumber,
                         prTitle: "failed to fetch pr",
-                        prUrl:`https://github.com/${owner}/${repo}/pull/${prNumber}`,
-                        review: `Error ${error instanceof Error ? error.message: "Unknown error" }`,
+                        prUrl: `https://github.com/${owner}/${repo}/pull/${prNumber}`,
+                        review: `Error ${error instanceof Error ? error.message : "Unknown error"}`,
                         status: "failed"
                     }
                 })
@@ -86,3 +95,5 @@ export async function reviewPullRequest(
     }
 
 }
+
+
