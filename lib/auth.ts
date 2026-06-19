@@ -16,7 +16,7 @@ export const auth = betterAuth({
             scope: ['repo']
         }
     },
-    trustedOrigins:["http://localhost:3000", "https://dangle-snowshoe-revenue.ngrok-free.dev"],
+    trustedOrigins:["https://buildbeaver.vercel.app"],
     plugins: [
         polar({
             client: polarClient,

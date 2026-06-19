@@ -101,6 +101,12 @@ export async function getDashboardStats() {
 
     } catch (error) {
         console.error("Dashboard Stats Error:", error);
+        return {
+            totalCommits: 0,
+            totalPRs: 0,
+            totalReviews: 0,
+            totalRepos: 0
+        };
     }
 }
 
