@@ -161,7 +161,7 @@ sequenceDiagram
         });
 
 
-        await step.run("[post-comment", async () => {
+        await step.run("post-comment", async () => {
             await postReviewComment(token, owner, repo, prNumber, review);
         })
 
