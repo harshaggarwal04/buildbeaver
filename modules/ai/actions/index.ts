@@ -38,7 +38,7 @@ export async function reviewPullRequest(
 
         const canReview = await canCreateReview(repository.user.id, repository.id);
 
-        if(!canCreateReview){
+        if(!canReview){
             throw new Error("Review Limit Reached For this repository. Please upgrade to Pro for unlimited reviews")
         }
 
